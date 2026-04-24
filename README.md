@@ -64,4 +64,4 @@ Jika Anda ingin menjalankan proyek ini di komputer lokal:
 5. Buka browser dan akses `http://localhost:3000`.
 
 ---
-Dibuat dengan ❤️ untuk efisiensi inventaris Anda.
+Dibuat dengan Santai untuk efisiensi inventaris Anda.
