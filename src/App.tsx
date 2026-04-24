@@ -178,8 +178,8 @@ export default function App() {
             <BarcodeIcon size={24} />
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">Bulk Barcode Pro</h1>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Enterprise Suite</p>
+            <h1 className="font-bold text-lg leading-tight">Barcode Generator</h1>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Network Management RANTAU</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
