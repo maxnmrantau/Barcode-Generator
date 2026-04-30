@@ -14,9 +14,16 @@ import {
   ChevronLeft, 
   ChevronRight,
   Info,
-  AlertCircle
+  AlertCircle,
+  FileArchive,
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { jsPDF } from 'jspdf';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import html2canvas from 'html2canvas';
 
 // --- Constants ---
 const ITEMS_PER_PAGE = 100;
@@ -121,6 +128,8 @@ export default function App() {
   const [layout, setLayout] = useState<'grid' | 'list'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
 
   const [config, setConfig] = useState<BarcodeConfig>({
     type: 'CODE128',
@@ -169,6 +178,125 @@ export default function App() {
   const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
   const currentItems = items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
+  const getBarcodeDataURL = async (data: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '-9999px';
+      container.style.padding = '20px';
+      container.style.background = 'white';
+      
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      container.appendChild(svg);
+      
+      const label = document.createElement('div');
+      if (config.showText) {
+        label.innerText = data;
+        label.style.textAlign = 'center';
+        label.style.marginTop = '10px';
+        label.style.fontFamily = config.fontName;
+        label.style.fontSize = `${config.fontSize}px`;
+        container.appendChild(label);
+      }
+      
+      document.body.appendChild(container);
+      
+      try {
+        let h = config.height;
+        let w = config.width;
+        if (config.unit === 'inch') { h *= 96; w *= 96; }
+        else if (config.unit === 'cm') { h = (h / 2.54) * 96; w = (w / 2.54) * 96; }
+        else { h = (h / 25.4) * 96; w = (w / 25.4) * 96; }
+
+        JsBarcode(svg, data, {
+          format: config.type,
+          width: 2,
+          height: 100,
+          displayValue: false,
+          margin: 10,
+        });
+        
+        svg.setAttribute('width', w.toString());
+        svg.setAttribute('height', h.toString());
+        svg.setAttribute('preserveAspectRatio', 'none');
+        
+        html2canvas(container).then(canvasResult => {
+          const dataURL = canvasResult.toDataURL('image/jpeg', 0.8);
+          document.body.removeChild(container);
+          resolve(dataURL);
+        });
+      } catch (err) {
+        document.body.removeChild(container);
+        resolve('');
+      }
+    });
+  };
+
+  const handleExportPDF = async () => {
+    if (items.length === 0) return;
+    setIsExporting(true);
+    setExportProgress(0);
+    
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const columns = 3;
+    const itemWidth = (pageWidth - (margin * (columns + 1))) / columns;
+    const itemHeight = itemWidth * (config.height / config.width) + (config.showText ? 10 : 0);
+    
+    let x = margin;
+    let y = margin;
+    
+    for (let i = 0; i < items.length; i++) {
+        setExportProgress(Math.round(((i + 1) / items.length) * 100));
+        const dataURL = await getBarcodeDataURL(items[i].data);
+        
+        if (dataURL) {
+            if (y + itemHeight > pageHeight - margin) {
+                pdf.addPage();
+                x = margin;
+                y = margin;
+            }
+            
+            pdf.addImage(dataURL, 'JPEG', x, y, itemWidth, itemHeight);
+            
+            x += itemWidth + margin;
+            if (x + itemWidth > pageWidth - margin) {
+                x = margin;
+                y += itemHeight + margin;
+            }
+        }
+    }
+    
+    pdf.save('barcodes.pdf');
+    setIsExporting(false);
+  };
+
+  const handleExportZIP = async () => {
+    if (items.length === 0) return;
+    setIsExporting(true);
+    setExportProgress(0);
+    
+    const zip = new JSZip();
+    const folder = zip.folder("barcodes");
+    
+    for (let i = 0; i < items.length; i++) {
+        setExportProgress(Math.round(((i + 1) / items.length) * 100));
+        const dataURL = await getBarcodeDataURL(items[i].data);
+        if (dataURL) {
+            const base64Data = dataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
+            folder?.file(`${items[i].data.replace(/[^a-z0-9]/gi, '_')}_${i}.jpg`, base64Data, {base64: true});
+        }
+    }
+    
+    const content = await zip.generateAsync({type: "blob"});
+    saveAs(content, "barcodes.zip");
+    setIsExporting(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-900 selection:bg-emerald-100 selection:text-emerald-900">
       {/* Navbar */}
@@ -178,8 +306,8 @@ export default function App() {
             <BarcodeIcon size={24} />
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">Barcode Generator</h1>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Network Management RANTAU</p>
+            <h1 className="font-bold text-lg leading-tight">Bulk Barcode Pro</h1>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Enterprise Suite</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -355,6 +483,28 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <div className="flex flex-col items-end mr-4">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Export All</span>
+                    <div className="flex gap-2 mt-1">
+                      <button 
+                        disabled={isExporting}
+                        onClick={handleExportPDF}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-xs font-bold hover:bg-blue-100 transition-all disabled:opacity-50"
+                      >
+                        {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileText size={14} />}
+                        PDF
+                      </button>
+                      <button 
+                        disabled={isExporting}
+                        onClick={handleExportZIP}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-xs font-bold hover:bg-amber-100 transition-all disabled:opacity-50"
+                      >
+                        {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileArchive size={14} />}
+                        ZIP (JPG)
+                      </button>
+                    </div>
+                  </div>
+
                   <span className="text-xs font-medium text-gray-500 mr-2">Page {currentPage} of {totalPages}</span>
                   <button 
                     disabled={currentPage === 1}
@@ -431,6 +581,50 @@ export default function App() {
                     >
                       Next Page
                     </button>
+                  </div>
+                </div>
+              )}
+              {/* Progress Overlay */}
+              {isExporting && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+                  <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center space-y-6">
+                    <div className="relative w-24 h-24 mx-auto">
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle
+                          cx="48"
+                          cy="48"
+                          r="40"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          fill="transparent"
+                          className="text-gray-100"
+                        />
+                        <circle
+                          cx="48"
+                          cy="48"
+                          r="40"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          fill="transparent"
+                          strokeDasharray={251.2}
+                          strokeDashoffset={251.2 - (251.2 * exportProgress) / 100}
+                          className="text-emerald-500 transition-all duration-300"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center font-bold text-lg">
+                        {exportProgress}%
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 text-lg">Exporting Barcodes...</h3>
+                      <p className="text-sm text-gray-500 mt-2">Please wait while we process all {items.length} barcodes. This might take a moment.</p>
+                    </div>
+                    <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-emerald-500 h-full transition-all duration-300" 
+                        style={{ width: `${exportProgress}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
               )}

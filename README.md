@@ -1,5 +1,3 @@
-<img width="1920" height="911" alt="image" src="https://github.com/user-attachments/assets/a3ec7a93-b2dc-4b74-8d7a-892acdd0abed" />
-
 # Bulk Barcode Pro ⚡
 
 **Bulk Barcode Pro** adalah aplikasi web modern berperforma tinggi yang dirancang untuk menghasilkan barcode dalam jumlah besar secara cepat dan efisien. Aplikasi ini mendukung kustomisasi penuh terhadap dimensi fisik barcode, jenis barcode, serta layout tampilan.
@@ -8,6 +6,9 @@
 
 - **Generasi Massal**: Mendukung pembuatan hingga **1.000 barcode** dalam satu sesi.
 - **Validasi Data**: Sistem validasi otomatis untuk memastikan input tidak melebihi batas dan data valid.
+- **Fitur Ekspor Lengkap**:
+  - **Ekspor PDF**: Menggabungkan semua barcode ke dalam satu dokumen PDF siap cetak.
+  - **Ekspor ZIP (JPG)**: Mengunduh semua barcode satu per satu dalam format gambar JPG yang dibundel dalam file ZIP.
 - **Kustomisasi Dimensi Fisik**:
   - Mengatur **Lebar (Width)** dan **Tinggi (Height)** secara akurat.
   - Pilihan unit: **Inci (inch)**, **Centimeter (cm)**, dan **Millimeter (mm)**.
@@ -64,4 +65,4 @@ Jika Anda ingin menjalankan proyek ini di komputer lokal:
 5. Buka browser dan akses `http://localhost:3000`.
 
 ---
-Dibuat dengan Santai untuk efisiensi inventaris Anda.
+Dibuat dengan ❤️ untuk efisiensi inventaris Anda.
