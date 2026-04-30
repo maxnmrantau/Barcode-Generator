@@ -1,3 +1,5 @@
+<img width="1841" height="818" alt="{4133AC57-E22A-42BF-ADF9-848C02EFE438}" src="https://github.com/user-attachments/assets/831988cc-2506-4c1c-b07b-4e1a6d12df72" />
+
 # Bulk Barcode Pro ⚡
 
 **Bulk Barcode Pro** adalah aplikasi web modern berperforma tinggi yang dirancang untuk menghasilkan barcode dalam jumlah besar secara cepat dan efisien. Aplikasi ini mendukung kustomisasi penuh terhadap dimensi fisik barcode, jenis barcode, serta layout tampilan.
